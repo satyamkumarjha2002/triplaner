@@ -4,16 +4,17 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOutIcon } from 'lucide-react';
 
-import { authService } from '@/services/auth';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LogoutPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const { logout } = useAuth();
 
   useEffect(() => {
     const performLogout = async () => {
       try {
-        await authService.logout();
+        await logout();
         // Redirect to login page after logout
         router.push('/auth/login');
       } catch (err) {
@@ -23,7 +24,7 @@ export default function LogoutPage() {
     };
 
     performLogout();
-  }, [router]);
+  }, [router, logout]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">

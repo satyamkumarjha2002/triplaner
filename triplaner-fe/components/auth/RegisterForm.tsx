@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { authService } from '@/services/auth';
+import { useAuth } from '@/context/AuthContext';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: 'Username must be at least 3 characters' }),
@@ -27,13 +27,14 @@ const formSchema = z.object({
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ['confirmPassword'],
 });
 
 export function RegisterForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const { register } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,7 +52,7 @@ export function RegisterForm() {
 
     try {
       const { confirmPassword, ...registerData } = values;
-      await authService.register(registerData);
+      await register(registerData);
       router.push('/trips');
     } catch (err) {
       console.error('Registration error:', err);

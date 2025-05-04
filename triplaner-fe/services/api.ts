@@ -1,9 +1,10 @@
 // Base API service for all HTTP requests
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { getCookie, removeCookie } from '@/lib/cookies';
 
 // Configure base API URL - replace with your actual backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9090';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9090/api';
 
 // Create and configure Axios instance
 const axiosInstance: AxiosInstance = axios.create({
@@ -17,8 +18,8 @@ const axiosInstance: AxiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Get token from localStorage if available
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    // Get token from cookies if available
+    const token = getCookie('authToken');
     
     // Add auth header if token exists
     if (token && config.headers) {
@@ -39,7 +40,7 @@ axiosInstance.interceptors.response.use(
       // Redirect to login page or refresh token
       if (typeof window !== 'undefined') {
         // Clear token and redirect to login
-        localStorage.removeItem('authToken');
+        removeCookie('authToken');
         window.location.href = '/auth/login';
       }
     }

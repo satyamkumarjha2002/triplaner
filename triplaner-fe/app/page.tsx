@@ -1,11 +1,16 @@
+'use client';
+
 import Link from 'next/link';
 import { MapPinIcon, UsersIcon, CalendarIcon, HeartIcon, ArrowRightIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
+  const { isAuthenticated, loading } = useAuth();
+  
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -25,15 +30,26 @@ export default function HomePage() {
                   Coordinate, vote, and budget with friends. All your trip planning in one beautiful app.
                 </p>
                 <div className="flex flex-wrap gap-4">
-                  <Button asChild size="lg" className="gap-2">
-                    <Link href="/auth/register">
-                      Get Started
-                      <ArrowRightIcon className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="lg">
-                    <Link href="/auth/login">Sign In</Link>
-                  </Button>
+                  {!isAuthenticated && !loading ? (
+                    <>
+                      <Button asChild size="lg" className="gap-2">
+                        <Link href="/auth/register">
+                          Get Started
+                          <ArrowRightIcon className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" size="lg">
+                        <Link href="/auth/login">Sign In</Link>
+                      </Button>
+                    </>
+                  ) : (
+                    <Button asChild size="lg" className="gap-2">
+                      <Link href="/dashboard">
+                        Go to Dashboard
+                        <ArrowRightIcon className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  )}
                 </div>
                 <div className="mt-8 flex items-center">
                   <div className="flex -space-x-2">
