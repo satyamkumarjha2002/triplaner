@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsDateString, IsOptional, IsNumber, IsEnum } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsDateString,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
 import { ActivityCategory } from '../entities/activity.entity';
 
 export class CreateActivityDto {
@@ -25,4 +32,4 @@ export class CreateActivityDto {
   @IsOptional()
   @IsString()
   notes?: string;
-} 
+}

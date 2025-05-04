@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { CalendarIcon, ClockIcon, MapPinIcon, DollarSignIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isAfter, isBefore } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { activityService } from '@/services/activities';
+import { tripService } from '@/services/trips';
 import { CreateActivityData } from '@/services/activities';
 import { cn } from '@/lib/utils';
 
@@ -60,7 +61,32 @@ const formSchema = z.object({
 export function ActivityForm({ tripId, onSuccess, isInModal = false }: ActivityFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingTrip, setIsFetchingTrip] = useState(true);
   const [error, setError] = useState<string>('');
+  const [tripDates, setTripDates] = useState<{ startDate: Date | null; endDate: Date | null }>({
+    startDate: null,
+    endDate: null
+  });
+
+  useEffect(() => {
+    const fetchTripDates = async () => {
+      setIsFetchingTrip(true);
+      try {
+        const trip = await tripService.getTripById(tripId);
+        setTripDates({
+          startDate: new Date(trip.startDate),
+          endDate: new Date(trip.endDate)
+        });
+      } catch (err) {
+        console.error('Failed to fetch trip dates:', err);
+        setError('Failed to fetch trip dates. Please try again.');
+      } finally {
+        setIsFetchingTrip(false);
+      }
+    };
+
+    fetchTripDates();
+  }, [tripId]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -77,8 +103,19 @@ export function ActivityForm({ tripId, onSuccess, isInModal = false }: ActivityF
     setIsLoading(true);
     setError('');
 
+    if (tripDates.startDate && isBefore(values.date, tripDates.startDate)) {
+      setError(`Activity date cannot be before the trip start date (${format(tripDates.startDate, 'MMM d, yyyy')})`);
+      setIsLoading(false);
+      return;
+    }
+
+    if (tripDates.endDate && isAfter(values.date, tripDates.endDate)) {
+      setError(`Activity date cannot be after the trip end date (${format(tripDates.endDate, 'MMM d, yyyy')})`);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Format the data for the API
       const activityData: CreateActivityData = {
         title: values.title,
         date: format(values.date, 'yyyy-MM-dd'),
@@ -141,11 +178,14 @@ export function ActivityForm({ tripId, onSuccess, isInModal = false }: ActivityF
                       <Button
                         variant="outline"
                         className="pl-3 text-left font-normal h-10 w-full"
+                        disabled={isFetchingTrip}
                       >
-                        {field.value ? (
+                        {isFetchingTrip ? (
+                          <span className="text-muted-foreground">Loading trip dates...</span>
+                        ) : field.value ? (
                           format(field.value, "PPP")
                         ) : (
-                          <span className="text-muted-foreground">Pick a date</span>
+                          <span className="text-muted-foreground">Pick a date within trip range</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -157,9 +197,18 @@ export function ActivityForm({ tripId, onSuccess, isInModal = false }: ActivityF
                       selected={field.value}
                       onSelect={field.onChange}
                       initialFocus
+                      disabled={(date) => {
+                        if (!tripDates.startDate || !tripDates.endDate) return false;
+                        return isBefore(date, tripDates.startDate) || isAfter(date, tripDates.endDate);
+                      }}
                     />
                   </PopoverContent>
                 </Popover>
+                {!isFetchingTrip && tripDates.startDate && tripDates.endDate && (
+                  <FormDescription>
+                    Select a date between {format(tripDates.startDate, "MMM d, yyyy")} and {format(tripDates.endDate, "MMM d, yyyy")}
+                  </FormDescription>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -256,14 +305,18 @@ export function ActivityForm({ tripId, onSuccess, isInModal = false }: ActivityF
           )}
         />
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && (
+          <div className="bg-destructive/10 p-3 rounded-md border border-destructive">
+            <p className="text-sm text-destructive font-medium">{error}</p>
+          </div>
+        )}
         
         <Button 
           type="submit" 
           className={cn("w-full", isInModal ? "mt-6" : "")} 
-          disabled={isLoading}
+          disabled={isLoading || isFetchingTrip}
         >
-          {isLoading ? 'Adding activity...' : 'Add Activity'}
+          {isLoading ? 'Adding activity...' : isFetchingTrip ? 'Loading trip dates...' : 'Add Activity'}
         </Button>
       </form>
     </Form>

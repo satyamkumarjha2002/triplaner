@@ -16,4 +16,4 @@ export class UpdateTripDto {
   @IsOptional()
   @IsNumber()
   budget?: number;
-} 
+}

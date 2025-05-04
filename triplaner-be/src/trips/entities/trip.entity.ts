@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, ManyToMany, JoinTable } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Activity } from '../../activities/entities/activity.entity';
 import { Invitation } from '../../invitations/entities/invitation.entity';
@@ -48,4 +58,4 @@ export class Trip {
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+}

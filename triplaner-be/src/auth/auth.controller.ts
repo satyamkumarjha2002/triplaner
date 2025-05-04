@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Get, UseGuards, Req, ClassSerializerInterceptor, UseInterceptors, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -12,7 +22,7 @@ import { InvitationsService } from '../invitations/invitations.service';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly invitationsService: InvitationsService
+    private readonly invitationsService: InvitationsService,
   ) {}
 
   @Post('register')
@@ -27,14 +37,17 @@ export class AuthController {
       throw new UnauthorizedException('User authentication failed');
     }
     const authResult = await this.authService.login(req.user as User);
-    
+
     // Add pending invitations to the response
-    const pendingInvitations = await this.invitationsService.findUserInvitations((req.user as User).id);
-    const hasPendingInvitations = pendingInvitations.some(inv => inv.status === 'pending');
-    
+    const pendingInvitations =
+      await this.invitationsService.findUserInvitations((req.user as User).id);
+    const hasPendingInvitations = pendingInvitations.some(
+      (inv) => inv.status === 'pending',
+    );
+
     return {
       ...authResult,
-      hasPendingInvitations
+      hasPendingInvitations,
     };
   }
 
@@ -42,14 +55,17 @@ export class AuthController {
   @Get('me')
   async getProfile(@Req() req: Request) {
     const user = req.user as User;
-    
+
     // Add pending invitations to the response
-    const pendingInvitations = await this.invitationsService.findUserInvitations(user.id);
-    const hasPendingInvitations = pendingInvitations.some(inv => inv.status === 'pending');
-    
+    const pendingInvitations =
+      await this.invitationsService.findUserInvitations(user.id);
+    const hasPendingInvitations = pendingInvitations.some(
+      (inv) => inv.status === 'pending',
+    );
+
     return {
       user,
-      hasPendingInvitations
+      hasPendingInvitations,
     };
   }
 
@@ -63,4 +79,4 @@ export class AuthController {
   isAlive() {
     return { message: 'Server is alive' };
   }
-} 
+}

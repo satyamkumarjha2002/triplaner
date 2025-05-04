@@ -7,12 +7,9 @@ import { UsersModule } from '../users/users.module';
 import { Invitation } from '../invitations/entities/invitation.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Trip, Invitation]),
-    UsersModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Trip, Invitation]), UsersModule],
   providers: [TripsService],
   controllers: [TripsController],
   exports: [TripsService],
 })
-export class TripsModule {} 
+export class TripsModule {}

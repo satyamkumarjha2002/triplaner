@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Trip } from '../../trips/entities/trip.entity';
 import { Vote } from '../../activities/entities/vote.entity';
@@ -40,4 +47,4 @@ export class User {
 
   @OneToMany(() => Invitation, (invitation) => invitation.sender)
   sentInvitations: Invitation[];
-} 
+}

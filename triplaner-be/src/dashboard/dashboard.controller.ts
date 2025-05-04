@@ -1,4 +1,11 @@
-import { Controller, Get, UseGuards, Req, ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Req,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
 import { User } from '../users/entities/user.entity';
@@ -15,4 +22,4 @@ export class DashboardController {
     const user = req.user as User;
     return this.dashboardService.getDashboardData(user);
   }
-} 
+}

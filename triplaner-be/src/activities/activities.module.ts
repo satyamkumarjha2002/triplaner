@@ -19,4 +19,4 @@ import { UsersModule } from '../users/users.module';
   controllers: [ActivitiesController, VotesController],
   exports: [ActivitiesService, VotesService],
 })
-export class ActivitiesModule {} 
+export class ActivitiesModule {}

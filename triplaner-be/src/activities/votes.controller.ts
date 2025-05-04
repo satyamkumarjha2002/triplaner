@@ -1,4 +1,14 @@
-import { Controller, Post, Delete, Body, Param, UseGuards, Req, ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+} from '@nestjs/common';
 import { VotesService } from './votes.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,7 +29,12 @@ export class VotesController {
     @Req() req: Request,
   ) {
     const user = req.user as User;
-    return this.votesService.createVote(tripId, activityId, createVoteDto, user);
+    return this.votesService.createVote(
+      tripId,
+      activityId,
+      createVoteDto,
+      user,
+    );
   }
 
   @Delete()
@@ -31,4 +46,4 @@ export class VotesController {
     const user = req.user as User;
     return this.votesService.removeVote(tripId, activityId, user.id);
   }
-} 
+}

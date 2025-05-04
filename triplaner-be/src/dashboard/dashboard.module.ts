@@ -6,12 +6,8 @@ import { ActivitiesModule } from '../activities/activities.module';
 import { InvitationsModule } from '../invitations/invitations.module';
 
 @Module({
-  imports: [
-    TripsModule,
-    ActivitiesModule,
-    InvitationsModule,
-  ],
+  imports: [TripsModule, ActivitiesModule, InvitationsModule],
   controllers: [DashboardController],
   providers: [DashboardService],
 })
-export class DashboardModule {} 
+export class DashboardModule {}

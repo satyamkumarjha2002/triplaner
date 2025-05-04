@@ -4,4 +4,4 @@ export class CreateVoteDto {
   @IsNotEmpty()
   @IsBoolean()
   isUpvote: boolean;
-} 
+}

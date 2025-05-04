@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Unique,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Activity } from './activity.entity';
 
@@ -27,4 +35,4 @@ export class Vote {
 
   @CreateDateColumn()
   createdAt: Date;
-} 
+}
