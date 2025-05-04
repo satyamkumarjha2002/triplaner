@@ -41,7 +41,17 @@ export const tripService = {
 
   // Invite a user to a trip
   async inviteUser(inviteData: InviteUserData): Promise<Invitation> {
-    return api.post<Invitation>(`/trips/${inviteData.tripId}/invitations`, { email: inviteData.email });
+    console.log(`Sending invitation: Trip ID ${inviteData.tripId} to ${inviteData.email}`);
+    try {
+      const result = await api.post<Invitation>(`/trips/${inviteData.tripId}/invitations`, { 
+        email: inviteData.email 
+      });
+      console.log('Invitation sent successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      throw error;
+    }
   },
 
   // Join a trip via trip code

@@ -94,8 +94,8 @@ export function InviteFriendModal({
     defaultValues: {
       tripId,
       emails: [],
-      customEmail: '',
     },
+    mode: 'onChange',
   });
 
   // Filter contacts based on search query
@@ -152,13 +152,25 @@ export function InviteFriendModal({
     setIsLoading(true);
     setError(null);
 
+    // Validate that emails array is not empty
+    if (values.emails.length === 0) {
+      setError('Please select at least one email to invite');
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('Form submission values:', values);
+    console.log('Selected emails:', selectedEmails);
+
     try {
       // Send invitations for each email
-      const invitationPromises = values.emails.map(email => 
-        tripService.inviteUser({ tripId, email })
-      );
+      const invitationPromises = values.emails.map(email => {
+        console.log(`Processing invitation for email: ${email}`);
+        return tripService.inviteUser({ tripId, email });
+      });
       
-      await Promise.all(invitationPromises);
+      const results = await Promise.all(invitationPromises);
+      console.log('All invitations sent successfully:', results);
       
       // Reset form
       form.reset();
@@ -171,9 +183,14 @@ export function InviteFriendModal({
       if (onSuccess) {
         onSuccess();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to invite friends:', err);
-      setError('Failed to send invitations. Please try again.');
+      // Extract error message from API if available
+      let errorMessage = 'Failed to send invitations. Please try again.';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -239,55 +256,37 @@ export function InviteFriendModal({
             </div>
           )}
 
+          {/* Selected Users List */}
+          {showSelectedUsers && selectedEmails.length > 0 && (
+            <div className="px-3 py-2 border-b">
+              <ScrollArea className="max-h-[120px]">
+                <div className="flex flex-wrap gap-1 p-3">
+                  {selectedEmails.map(email => (
+                    <Badge key={email} variant="secondary" className="flex items-center gap-1 px-2 py-1">
+                      <span className="max-w-[150px] truncate text-xs">{email}</span>
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveEmail(email);
+                        }}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full flex-1 overflow-hidden">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
               <FormField
                 control={form.control}
                 name="emails"
                 render={() => (
                   <FormItem className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-3">
-                      <FormMessage />
-                    </div>
                     <FormControl>
-                      <div className="flex flex-col h-full flex-1 overflow-hidden">
-                        {/* Selected users section - Collapsible */}
-                        {selectedEmails.length > 0 && showSelectedUsers && (
-                          <div className="px-6 py-2">
-                            <div className="flex flex-wrap gap-1.5 mb-2">
-                              {selectedEmails.map(email => {
-                                const contact = recentContacts.find(c => c.email === email);
-                                return (
-                                  <Badge 
-                                    key={email} 
-                                    variant="secondary" 
-                                    className="px-2 py-1.5 gap-1.5 h-8"
-                                  >
-                                    {contact ? (
-                                      <>
-                                        <span className="bg-primary/10 text-primary text-xs rounded-full h-5 w-5 flex items-center justify-center mr-1">
-                                          {contact.avatar}
-                                        </span>
-                                        <span className="truncate max-w-[150px]">{contact.name}</span>
-                                      </>
-                                    ) : (
-                                      <span className="truncate max-w-[200px]">{email}</span>
-                                    )}
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-4 w-4 p-0 hover:bg-transparent hover:text-destructive"
-                                      onClick={() => onRemoveEmail(email)}
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </Badge>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
+                      <div className="flex flex-col flex-1 overflow-hidden">
                         <TabsContent value="friends" className="mt-0 flex-1 overflow-hidden">
                           <div className="px-6 pb-2">
                             <div className="relative">
@@ -470,6 +469,13 @@ export function InviteFriendModal({
                             <Button
                               type="submit"
                               disabled={isLoading || selectedEmails.length === 0}
+                              onClick={() => {
+                                console.log('Send Invites button clicked');
+                                if (selectedEmails.length === 0) {
+                                  setError('Please select at least one email to invite');
+                                  return;
+                                }
+                              }}
                             >
                               {isLoading ? 'Sending invites...' : 'Send Invites'}
                             </Button>

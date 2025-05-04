@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOutIcon } from 'lucide-react';
 
@@ -10,9 +10,15 @@ export default function LogoutPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const { logout } = useAuth();
+  // Use a ref to track if logout has been attempted
+  const logoutAttempted = useRef(false);
 
   useEffect(() => {
     const performLogout = async () => {
+      // Only attempt logout once
+      if (logoutAttempted.current) return;
+      logoutAttempted.current = true;
+      
       try {
         await logout();
         // Redirect to login page after logout

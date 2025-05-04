@@ -3,8 +3,13 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getCookie, removeCookie } from '@/lib/cookies';
 
-// Configure base API URL - replace with your actual backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9090/api';
+// Configure base API URL
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9090';
+// Ensure we don't append /api if it's already included in the base URL
+const API_BASE_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+
+// Flag to prevent infinite redirect loops
+let isRedirecting = false;
 
 // Create and configure Axios instance
 const axiosInstance: AxiosInstance = axios.create({
@@ -38,10 +43,24 @@ axiosInstance.interceptors.response.use(
     // Handle authentication errors
     if (error.response?.status === 401) {
       // Redirect to login page or refresh token
-      if (typeof window !== 'undefined') {
-        // Clear token and redirect to login
+      if (typeof window !== 'undefined' && !isRedirecting) {
+        // Set flag to prevent multiple redirects
+        isRedirecting = true;
+        
+        // Clear token
         removeCookie('authToken');
-        window.location.href = '/auth/login';
+        
+        // Only redirect if we're not already on the login page
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/auth/login')) {
+          console.log('Unauthorized access detected, redirecting to login');
+          window.location.href = '/auth/login';
+        } else {
+          // Reset the flag if we're already on the login page
+          setTimeout(() => {
+            isRedirecting = false;
+          }, 1000);
+        }
       }
     }
     
