@@ -6,7 +6,7 @@ Scenario:
 Planning group trips with friends is always chaotic — endless chats, unorganized budgets, clashing schedules, and confusion about who's doing what. There's no single place to track it all.
 Planit solves that. It's a web-based trip planner where friends can co-create itineraries, add places, assign budgets, and vote on activities together in real time.
 You are tasked with building a secure, user-centric MVP of this collaborative planning tool.
-
+    
 🎯 Objective:
 Create a fullstack application where authenticated users can:
 
