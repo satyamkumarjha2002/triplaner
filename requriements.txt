@@ -1,0 +1,82 @@
+ Planit – Collaborative Trip Planner
+Time Remaining
+23:25:55
+🌍 Planit – Collaborative Trip Planner
+Scenario:
+Planning group trips with friends is always chaotic — endless chats, unorganized budgets, clashing schedules, and confusion about who's doing what. There's no single place to track it all.
+Planit solves that. It's a web-based trip planner where friends can co-create itineraries, add places, assign budgets, and vote on activities together in real time.
+You are tasked with building a secure, user-centric MVP of this collaborative planning tool.
+
+🎯 Objective:
+Create a fullstack application where authenticated users can:
+
+Create and manage shared trip plans
+Invite friends to collaborate
+Add destinations, activities, and budgets
+Vote on activities and finalize decisions
+Visualize trip timeline and budget breakdown
+👤 User Role: user
+All users have the same capabilities, but trip data and permissions depend on who created or was invited to a trip.
+
+🔐 Authentication & Authorization:
+Users can register/login with email and password
+Authenticated users can:
+Create trips
+Invite other users (by email/username)
+Access only trips they are part of
+Only edit/delete activities in their own trips
+⚙️ Core Functional Features:
+1. Create a Trip Plan
+Trip creation form includes:
+Trip Name
+Start and End Dates
+Group Budget (optional)
+Trip creator becomes the first participant
+Each trip gets a unique trip code (or shareable link)
+2. Invite Friends
+Users can invite friends via:
+Trip code
+Email (mock invitation for now)
+Invited users join as collaborators
+All collaborators can:
+Add/Edit/Delete activities
+Vote on activities
+Track group decisions
+3. Add Activities to Trip
+For each activity:
+Title (e.g., "Kayaking at Baga Beach")
+Date & Time
+Category (Adventure, Food, Sightseeing, Other)
+Estimated Cost
+Optional Notes
+Activities are visible in a daily itinerary fo'
+
+
+
+
+🚨 Implementation Approach Reminder 🚨
+
+Before proceeding with any changes, please ensure the following steps are followed:
+
+1. **Revert any previously incorrect implementations** to maintain codebase integrity.
+
+2. **Standardize Data Fetching via Services**:
+   - For example, in the Dashboard module, use the `dashboardService` to fetch data.
+   - Define a function like:
+
+     ```javascript
+     getDashboardData(someParam) {
+       // Call the backend API (to be implemented later) call the relevent API and comment that later it will get uncommented when API will be implemented
+       // For now, return some dummy/mock data
+     }
+     ```
+
+   - Always call this function from the component (e.g., Dashboard component) to retrieve data.
+
+3. **Maintain Consistency Across Modules**:
+   - Apply this approach uniformly across all modules in the project.
+   - This ensures better separation of concerns, easier testing, and maintainable code.
+
+✅ This pattern promotes a clean architecture and facilitates scalability.
+
+🔁 Consistency is key. Ensure every module adheres to this structure.
