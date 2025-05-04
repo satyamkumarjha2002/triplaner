@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { DeclineReasonDialog } from '@/components/invitations/DeclineReasonDialog';
 import { tripService } from '@/services/trips';
 import { Invitation } from '@/types';
 
@@ -15,6 +16,8 @@ export default function InvitationsPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
+  const [selectedInvitation, setSelectedInvitation] = useState<Invitation | null>(null);
 
   useEffect(() => {
     fetchInvitations();
@@ -47,17 +50,25 @@ export default function InvitationsPage() {
     }
   };
 
-  const handleDecline = async (invitationId: string) => {
+  const openDeclineDialog = (invitation: Invitation) => {
+    setSelectedInvitation(invitation);
+    setDeclineDialogOpen(true);
+  };
+
+  const handleDecline = async (reason?: string) => {
+    if (!selectedInvitation) return;
+    
     try {
-      setActionInProgress(invitationId);
-      await tripService.declineInvitation(invitationId);
+      setActionInProgress(selectedInvitation.id);
+      await tripService.declineInvitation(selectedInvitation.id, reason);
       // Remove the declined invitation from the list
-      setInvitations(invitations.filter(inv => inv.id !== invitationId));
+      setInvitations(invitations.filter(inv => inv.id !== selectedInvitation.id));
     } catch (err) {
       console.error('Failed to decline invitation', err);
       setError('Failed to decline invitation. Please try again.');
     } finally {
       setActionInProgress(null);
+      setSelectedInvitation(null);
     }
   };
 
@@ -116,7 +127,7 @@ export default function InvitationsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => handleDecline(invitation.id)}
+                      onClick={() => openDeclineDialog(invitation)}
                       disabled={actionInProgress === invitation.id}
                     >
                       <XIcon className="h-4 w-4 mr-1" />
@@ -147,6 +158,17 @@ export default function InvitationsPage() {
       </main>
       
       <Footer />
+
+      {/* Decline Reason Dialog */}
+      <DeclineReasonDialog 
+        isOpen={declineDialogOpen}
+        onClose={() => {
+          setDeclineDialogOpen(false);
+          setSelectedInvitation(null);
+        }}
+        onDecline={handleDecline}
+        invitationTitle={selectedInvitation?.trip?.name}
+      />
     </div>
   );
 } 
