@@ -1,4 +1,15 @@
-import { Controller, Get, Put, Param, Body, UseGuards, ClassSerializerInterceptor, UseInterceptors, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+  Req,
+  Query,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
@@ -13,8 +24,19 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll(): Promise<User[]> {
-    return this.usersService.findAll();
+  findAll(@Req() req: Request): Promise<User[]> {
+    const currentUserId = (req.user as User).id;
+    return this.usersService.findAll(currentUserId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('search')
+  searchUsers(
+    @Query('query') query: string,
+    @Req() req: Request,
+  ): Promise<User[]> {
+    const currentUserId = (req.user as User).id;
+    return this.usersService.searchUsers(query, currentUserId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -49,4 +71,4 @@ export class UsersController {
     await this.usersService.updatePassword(userId, updatePasswordDto);
     return { message: 'Password updated successfully' };
   }
-} 
+}

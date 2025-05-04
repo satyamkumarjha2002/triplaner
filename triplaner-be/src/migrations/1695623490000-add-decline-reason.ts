@@ -14,4 +14,4 @@ export class AddDeclineReason1695623490000 implements MigrationInterface {
       DROP COLUMN decline_reason
     `);
   }
-} 
+}

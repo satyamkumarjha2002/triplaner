@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Req, ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  UseGuards,
+  Req,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+} from '@nestjs/common';
 import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
@@ -30,7 +42,11 @@ export class TripsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateTripDto: UpdateTripDto, @Req() req: Request) {
+  update(
+    @Param('id') id: string,
+    @Body() updateTripDto: UpdateTripDto,
+    @Req() req: Request,
+  ) {
     const user = req.user as User;
     return this.tripsService.update(id, updateTripDto, user.id);
   }
@@ -44,7 +60,8 @@ export class TripsController {
   @Post('join')
   joinTripByCode(@Body('tripCode') tripCode: string, @Req() req: Request) {
     const user = req.user as User;
-    return this.tripsService.findByTripCode(tripCode)
-      .then(trip => this.tripsService.addParticipant(trip.id, user));
+    return this.tripsService
+      .findByTripCode(tripCode)
+      .then((trip) => this.tripsService.addParticipant(trip.id, user));
   }
-} 
+}

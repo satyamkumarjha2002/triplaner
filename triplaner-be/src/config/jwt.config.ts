@@ -5,4 +5,4 @@ export const jwtConfig: JwtModuleOptions = {
   signOptions: {
     expiresIn: '7d',
   },
-}; 
+};

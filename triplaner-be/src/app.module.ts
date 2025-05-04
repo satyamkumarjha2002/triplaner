@@ -9,6 +9,7 @@ import { TripsModule } from './trips/trips.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ActivitiesModule,
     InvitationsModule,
     DashboardModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

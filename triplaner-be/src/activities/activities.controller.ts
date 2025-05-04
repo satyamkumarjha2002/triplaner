@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Req, ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  UseGuards,
+  Req,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
@@ -19,7 +31,11 @@ export class ActivitiesController {
   }
 
   @Get(':id')
-  findOne(@Param('tripId') tripId: string, @Param('id') id: string, @Req() req: Request) {
+  findOne(
+    @Param('tripId') tripId: string,
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
     const user = req.user as User;
     return this.activitiesService.findOne(tripId, id, user.id);
   }
@@ -42,12 +58,21 @@ export class ActivitiesController {
     @Req() req: Request,
   ) {
     const user = req.user as User;
-    return this.activitiesService.update(tripId, id, updateActivityDto, user.id);
+    return this.activitiesService.update(
+      tripId,
+      id,
+      updateActivityDto,
+      user.id,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('tripId') tripId: string, @Param('id') id: string, @Req() req: Request) {
+  remove(
+    @Param('tripId') tripId: string,
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
     const user = req.user as User;
     return this.activitiesService.remove(tripId, id, user.id);
   }
-} 
+}

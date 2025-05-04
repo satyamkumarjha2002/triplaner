@@ -4,4 +4,4 @@ export class CreateInvitationDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
-} 
+}

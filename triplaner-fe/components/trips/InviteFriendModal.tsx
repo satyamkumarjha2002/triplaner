@@ -34,6 +34,8 @@ import {
 } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { tripService } from '@/services/trips';
+import { userService } from '@/services/user';
+import { User } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -50,18 +52,6 @@ const formSchema = z.object({
     message: 'Please enter a valid email address',
   }).optional(),
 });
-
-// Sample of recent contacts to select from
-const recentContacts = [
-  { email: 'friend1@example.com', name: 'Sarah Johnson', avatar: 'SJ' },
-  { email: 'friend2@example.com', name: 'Michael Brown', avatar: 'MB' },
-  { email: 'friend3@example.com', name: 'Emma Wilson', avatar: 'EW' },
-  { email: 'friend4@example.com', name: 'James Davis', avatar: 'JD' },
-  { email: 'friend5@example.com', name: 'Laura Miller', avatar: 'LM' },
-  { email: 'friend6@example.com', name: 'David Thompson', avatar: 'DT' },
-  { email: 'friend7@example.com', name: 'Sophia Martinez', avatar: 'SM' },
-  { email: 'friend8@example.com', name: 'Robert Anderson', avatar: 'RA' },
-];
 
 interface InviteFriendModalProps {
   isOpen: boolean;
@@ -88,6 +78,8 @@ export function InviteFriendModal({
   const [showSelectedUsers, setShowSelectedUsers] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -98,26 +90,70 @@ export function InviteFriendModal({
     mode: 'onChange',
   });
 
-  // Filter contacts based on search query
-  const filteredContacts = recentContacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    contact.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchSearchedUsers = async () => {
+      if (searchQuery.trim() === '') return; // Don't fetch on empty search
+      
+      setIsSearching(true);
+      try {
+        const result = await userService.searchUsers(searchQuery);
+        setUsers(result);
+      } catch (error) {
+        console.error('Error fetching users by search:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timer = setTimeout(fetchSearchedUsers, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      if (!isOpen) return;
+      
+      setIsSearching(true);
+      try {
+        // Use a separate API endpoint to get all users (limited to a reasonable number)
+        const result = await userService.getAllUsers();
+        setUsers(result);
+      } catch (error) {
+        console.error('Error fetching all users:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchAllUsers();
+    }
+  }, [isOpen]);
+
+  const filteredUsers = searchQuery.trim() === '' 
+    ? users.filter(user => !selectedEmails.includes(user.email))
+    : users.filter(user => {
+        // When searching, filter users that match the search query
+        const matchesSearch = 
+          user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (user.name && user.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        // Also exclude already selected users
+        return matchesSearch && !selectedEmails.includes(user.email);
+      });
 
   const onAddEmail = () => {
-    // Validate email
     if (!customEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       return;
     }
     
-    // Add to selected emails if not already selected
     if (!selectedEmails.includes(customEmail)) {
       const newSelectedEmails = [...selectedEmails, customEmail];
       setSelectedEmails(newSelectedEmails);
       form.setValue('emails', newSelectedEmails);
     }
     
-    // Clear input
     setCustomEmail('');
     if (emailInputRef.current) {
       emailInputRef.current.focus();
@@ -140,19 +176,103 @@ export function InviteFriendModal({
     }
   };
 
-  // Select all visible contacts
   const selectAllVisible = () => {
-    const visibleEmails = filteredContacts.map(contact => contact.email);
+    const visibleEmails = filteredUsers.map(user => user.email);
     const newSelectedEmails = [...new Set([...selectedEmails, ...visibleEmails])];
     setSelectedEmails(newSelectedEmails);
     form.setValue('emails', newSelectedEmails);
+  };
+
+  const renderUserList = () => {
+    if (isSearching) {
+      return (
+        <div className="py-6 text-center text-sm text-muted-foreground">
+          Searching for users...
+        </div>
+      );
+    }
+    
+    if (filteredUsers.length > 0) {
+      return (
+        <div className="space-y-2">
+          {filteredUsers.map((user) => (
+            <div
+              key={user.email}
+              className={cn(
+                "flex items-center justify-between rounded-md p-2 cursor-pointer transition-colors",
+                selectedEmails.includes(user.email) 
+                  ? "bg-primary/10 hover:bg-primary/15" 
+                  : "hover:bg-muted"
+              )}
+              onClick={() => toggleContactSelection(user.email)}
+            >
+              <div className="flex items-center">
+                <div className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                  selectedEmails.includes(user.email) 
+                    ? "border-primary/50 bg-primary/10 text-primary" 
+                    : "border-muted-foreground/20 bg-muted"
+                )}>
+                  {user.name 
+                    ? `${user.name.split(' ')[0][0]}${user.name.split(' ')[1]?.[0] || ''}`
+                    : user.username.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="ml-3">
+                  <div className="text-sm font-medium">
+                    {user.name || user.username}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {user.email}
+                  </div>
+                </div>
+              </div>
+              <div>
+                {selectedEmails.includes(user.email) ? (
+                  <Check className="h-4 w-4 text-primary" />
+                ) : (
+                  <PlusCircle className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } 
+    
+    if (searchQuery.length > 0) {
+      return (
+        <div className="py-6 text-center">
+          <div className="text-sm font-medium mb-2">No users found</div>
+          <div className="text-xs text-muted-foreground mb-4">
+            Try a different search term or use email invite
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={() => {
+              setActiveTab('email');
+              setCustomEmail(searchQuery.includes('@') ? searchQuery : '');
+            }}
+          >
+            <Mail className="mr-1 h-3 w-3" />
+            Invite via Email
+          </Button>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="py-6 text-center text-sm text-muted-foreground">
+        No users available to invite
+      </div>
+    );
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setError(null);
 
-    // Validate that emails array is not empty
     if (values.emails.length === 0) {
       setError('Please select at least one email to invite');
       setIsLoading(false);
@@ -163,7 +283,6 @@ export function InviteFriendModal({
     console.log('Selected emails:', selectedEmails);
 
     try {
-      // Send invitations for each email
       const invitationPromises = values.emails.map(email => {
         console.log(`Processing invitation for email: ${email}`);
         return tripService.inviteUser({ tripId, email });
@@ -172,20 +291,16 @@ export function InviteFriendModal({
       const results = await Promise.all(invitationPromises);
       console.log('All invitations sent successfully:', results);
       
-      // Reset form
       form.reset();
       setSelectedEmails([]);
       
-      // Close modal
       onClose();
       
-      // Call success callback if provided
       if (onSuccess) {
         onSuccess();
       }
     } catch (err: any) {
       console.error('Failed to invite friends:', err);
-      // Extract error message from API if available
       let errorMessage = 'Failed to send invitations. Please try again.';
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -196,7 +311,6 @@ export function InviteFriendModal({
     }
   }
 
-  // When the dialog opens, clear any previous selections
   useEffect(() => {
     if (isOpen) {
       setSelectedEmails([]);
@@ -210,7 +324,7 @@ export function InviteFriendModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0 max-h-[90vh] overflow-hidden">
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-2 bg-background sticky top-0 z-10 border-b">
           <DialogTitle className="flex items-center">
             <UserPlus className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -222,7 +336,7 @@ export function InviteFriendModal({
         </DialogHeader>
         
         <Tabs defaultValue="friends" value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col flex-1 overflow-hidden">
-          <div className="px-6 pt-4 pb-2">
+          <div className="px-6 pt-4 pb-2 bg-background sticky top-0 z-[5]">
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="friends" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -235,7 +349,6 @@ export function InviteFriendModal({
             </TabsList>
           </div>
 
-          {/* Selected Users Summary */}
           {selectedEmails.length > 0 && (
             <div className="px-6 py-2 border-b">
               <button 
@@ -256,7 +369,6 @@ export function InviteFriendModal({
             </div>
           )}
 
-          {/* Selected Users List */}
           {showSelectedUsers && selectedEmails.length > 0 && (
             <div className="px-3 py-2 border-b">
               <ScrollArea className="max-h-[120px]">
@@ -287,168 +399,127 @@ export function InviteFriendModal({
                   <FormItem className="flex-1 flex flex-col overflow-hidden">
                     <FormControl>
                       <div className="flex flex-col flex-1 overflow-hidden">
-                        <TabsContent value="friends" className="mt-0 flex-1 overflow-hidden">
-                          <div className="px-6 pb-2">
+                        <TabsContent value="friends" className="mt-0 flex-1 overflow-hidden flex flex-col">
+                          <div className="px-6 py-3 border-b bg-background sticky top-0 z-[5]">
                             <div className="relative">
-                              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                               <Input
-                                ref={inputRef}
-                                placeholder="Search friends..."
+                                placeholder={isSearching && searchQuery.trim() === '' ? "Loading users..." : "Search users..."}
+                                className="pl-8"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9"
+                                ref={inputRef}
+                                disabled={isSearching && searchQuery.trim() === ''}
                               />
                             </div>
-                            <div className="flex justify-end mt-2">
-                              {filteredContacts.length > 0 && (
-                                <Button 
-                                  type="button" 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  onClick={selectAllVisible}
-                                  className="text-xs h-7"
-                                >
-                                  Select All ({filteredContacts.length})
-                                </Button>
-                              )}
+                            {users.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-2">
+                                Showing {filteredUsers.length} of {users.length} users
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="flex-1 overflow-y-auto" style={{ maxHeight: "300px" }}>
+                            <div className="p-4">
+                              {renderUserList()}
                             </div>
                           </div>
-
-                          {/* User selection list */}
-                          <ScrollArea className="px-3 h-[280px]">
-                            <div className="space-y-1 p-1">
-                              {filteredContacts.length > 0 ? (
-                                filteredContacts.map((contact) => (
-                                  <div
-                                    key={contact.email}
-                                    className={cn(
-                                      "flex items-center space-x-2 rounded-md px-2 py-2 cursor-pointer",
-                                      selectedEmails.includes(contact.email) 
-                                        ? "bg-accent/50" 
-                                        : "hover:bg-accent/30"
-                                    )}
-                                    onClick={() => toggleContactSelection(contact.email)}
-                                  >
-                                    <div className={cn(
-                                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-medium",
-                                      selectedEmails.includes(contact.email)
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "border-border bg-background"
-                                    )}>
-                                      {contact.avatar}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium leading-none">{contact.name}</p>
-                                      <p className="text-sm text-muted-foreground truncate">{contact.email}</p>
-                                    </div>
-                                    <div className="flex h-5 w-5 items-center justify-center">
-                                      {selectedEmails.includes(contact.email) && (
-                                        <Check className="h-4 w-4 text-primary" />
-                                      )}
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="py-6 text-center">
-                                  <p className="text-sm text-muted-foreground">No matching contacts</p>
-                                  {searchQuery.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) && (
-                                    <Button
-                                      variant="outline"
-                                      className="mt-2"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (!selectedEmails.includes(searchQuery)) {
-                                          const newSelectedEmails = [...selectedEmails, searchQuery];
-                                          setSelectedEmails(newSelectedEmails);
-                                          form.setValue('emails', newSelectedEmails);
-                                          setSearchQuery('');
-                                        }
-                                      }}
-                                    >
-                                      <Mail className="mr-2 h-4 w-4" />
-                                      Add "{searchQuery}"
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Custom email section when typing an email */}
-                              {searchQuery.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) && 
-                              !filteredContacts.find(c => c.email === searchQuery) &&
-                              !selectedEmails.includes(searchQuery) && (
-                                <div className="pt-2">
-                                  <div
-                                    className="flex items-center space-x-2 rounded-md border border-dashed px-2 py-2 cursor-pointer hover:bg-accent/30"
-                                    onClick={() => {
-                                      const newSelectedEmails = [...selectedEmails, searchQuery];
-                                      setSelectedEmails(newSelectedEmails);
-                                      form.setValue('emails', newSelectedEmails);
-                                      setSearchQuery('');
-                                    }}
-                                  >
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs">
-                                      <Mail className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <p className="text-sm font-medium leading-none">Add New Contact</p>
-                                      <p className="text-sm text-muted-foreground">{searchQuery}</p>
-                                    </div>
-                                    <PlusCircle className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </ScrollArea>
+                          
+                          <div className="p-4 border-t bg-muted/50 mt-auto">
+                            {filteredUsers.length > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={selectAllVisible}
+                                className="w-full mb-2"
+                              >
+                                <Users className="mr-2 h-4 w-4" />
+                                Select All ({filteredUsers.length})
+                              </Button>
+                            )}
+                            <Button 
+                              onClick={() => form.handleSubmit(onSubmit)()}
+                              disabled={selectedEmails.length === 0 || isLoading}
+                              className="w-full"
+                            >
+                              {isLoading ? "Sending..." : `Invite ${selectedEmails.length > 0 ? `(${selectedEmails.length})` : ''}`}
+                            </Button>
+                          </div>
                         </TabsContent>
 
-                        <TabsContent value="email" className="mt-0 flex-1 overflow-hidden">
-                          <div className="px-6 py-4">
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Enter email addresses to invite people who aren't in your contacts.
+                        <TabsContent value="email" className="flex-1 overflow-hidden flex flex-col mt-0">
+                          <div className="px-6 py-3 border-b bg-background sticky top-0 z-[5]">
+                            <h3 className="text-sm font-medium mb-2">Invite by Email</h3>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Use this option when inviting people who don't have an account yet or aren't in the search results.
                             </p>
-                            <div className="space-y-4">
-                              <div className="flex items-center gap-2">
-                                <div className="relative flex-1">
-                                  <AtSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                  <Input
-                                    ref={emailInputRef}
-                                    placeholder="example@email.com"
-                                    value={customEmail}
-                                    onChange={(e) => setCustomEmail(e.target.value)}
-                                    className="pl-9"
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' && customEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                                        e.preventDefault();
-                                        onAddEmail();
-                                      }
-                                    }}
-                                  />
-                                </div>
-                                <Button 
-                                  type="button" 
-                                  size="sm"
-                                  onClick={onAddEmail}
-                                  disabled={!customEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)}
-                                >
-                                  <PlusCircle className="h-4 w-4 mr-1" />
-                                  Add
-                                </Button>
+                            <div className="flex space-x-2">
+                              <div className="flex-1">
+                                <Input
+                                  ref={emailInputRef}
+                                  placeholder="Enter email address..."
+                                  value={customEmail}
+                                  onChange={(e) => setCustomEmail(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && customEmail) {
+                                      e.preventDefault();
+                                      onAddEmail();
+                                    }
+                                  }}
+                                />
                               </div>
-                              <p className="text-xs text-muted-foreground">
-                                Tip: You can add multiple emails at once. Press Enter after each email.
-                              </p>
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                onClick={onAddEmail} 
+                                disabled={!customEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)}
+                              >
+                                Add
+                              </Button>
                             </div>
                           </div>
-                          <ScrollArea className="px-6 h-[220px]">
-                            {selectedEmails.length === 0 && (
-                              <div className="py-8 text-center border-2 border-dashed rounded-md">
-                                <Mail className="h-10 w-10 text-muted-foreground mx-auto opacity-30" />
-                                <p className="text-sm text-muted-foreground mt-2">
-                                  No emails added yet
-                                </p>
-                              </div>
-                            )}
-                          </ScrollArea>
+                          
+                          <div className="flex-1 overflow-y-auto" style={{ maxHeight: "300px" }}>
+                            <div className="p-4">
+                              {selectedEmails.length > 0 ? (
+                                <div className="space-y-2">
+                                  {selectedEmails.map((email) => (
+                                    <div 
+                                      key={email} 
+                                      className="flex items-center justify-between rounded-md border p-3"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Mail className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm">{email}</span>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => onRemoveEmail(email)}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                  Enter an email address to invite someone
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="p-4 border-t bg-muted/50 mt-auto">
+                            <Button 
+                              onClick={() => form.handleSubmit(onSubmit)()}
+                              disabled={selectedEmails.length === 0 || isLoading}
+                              className="w-full"
+                            >
+                              {isLoading ? "Sending..." : `Send ${selectedEmails.length > 0 ? `(${selectedEmails.length})` : ''} Invitations`}
+                            </Button>
+                          </div>
                         </TabsContent>
 
                         {error && (
@@ -465,19 +536,6 @@ export function InviteFriendModal({
                               onClick={onClose}
                             >
                               Cancel
-                            </Button>
-                            <Button
-                              type="submit"
-                              disabled={isLoading || selectedEmails.length === 0}
-                              onClick={() => {
-                                console.log('Send Invites button clicked');
-                                if (selectedEmails.length === 0) {
-                                  setError('Please select at least one email to invite');
-                                  return;
-                                }
-                              }}
-                            >
-                              {isLoading ? 'Sending invites...' : 'Send Invites'}
                             </Button>
                           </div>
                         </div>

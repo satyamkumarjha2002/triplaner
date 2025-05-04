@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Param, Body, UseGuards, Req, ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+} from '@nestjs/common';
 import { InvitationsService } from './invitations.service';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { DeclineInvitationDto } from './dto/decline-invitation.dto';
@@ -44,9 +55,13 @@ export class InvitationsController {
   decline(
     @Param('id') id: string,
     @Body() declineInvitationDto: DeclineInvitationDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const user = req.user as User;
-    return this.invitationsService.decline(id, user.email, declineInvitationDto.reason);
+    return this.invitationsService.decline(
+      id,
+      user.email,
+      declineInvitationDto.reason,
+    );
   }
-} 
+}

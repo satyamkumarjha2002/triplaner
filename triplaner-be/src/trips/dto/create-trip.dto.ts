@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsDateString, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsDateString,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 
 export class CreateTripDto {
   @IsNotEmpty()
@@ -16,4 +22,4 @@ export class CreateTripDto {
   @IsOptional()
   @IsNumber()
   budget?: number;
-} 
+}
