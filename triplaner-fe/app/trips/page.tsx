@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PlusIcon, SearchIcon, FilterIcon, ArrowDownIcon, ArrowUpIcon, CalendarIcon, LuggageIcon } from 'lucide-react';
+import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,34 +27,103 @@ export default function TripsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   
-  useEffect(() => {
-    const fetchTrips = async () => {
-      try {
-        const data = await tripService.getUserTrips();
-        setTrips(data);
-      } catch (err) {
-        console.error('Failed to fetch trips', err);
-        setError('Failed to load trips. Please try again later.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchTrips = async () => {
+    try {
+      const data = await tripService.getUserTrips();
+      setTrips(data);
+    } catch (err) {
+      console.error('Failed to fetch trips', err);
+      setError('Failed to load trips. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTrips();
   }, []);
+  
+  // Debug function to log date issues
+  useEffect(() => {
+    if (trips.length > 0) {
+      console.log('Debugging trip dates:');
+      trips.forEach((trip) => {
+        try {
+          const startDate = new Date(trip.startDate);
+          const endDate = new Date(trip.endDate);
+          console.log(
+            `Trip: ${trip.name}, Start: ${trip.startDate} (${startDate.toISOString()}), End: ${trip.endDate} (${endDate.toISOString()})`
+          );
+        } catch (e) {
+          console.error(`Trip ${trip.name} has invalid dates:`, trip.startDate, trip.endDate);
+        }
+      });
+    }
+  }, [trips]);
   
   // Filter trips based on search term
   const filteredTrips = trips.filter(trip => 
     trip.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
+  // Helper functions for date comparison with proper date normalization
+  const normalizeDate = (date: Date | string) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const isSameOrBefore = (date1: Date | string, date2: Date | string) => {
+    const d1 = normalizeDate(date1);
+    const d2 = normalizeDate(date2);
+    return d1 <= d2;
+  };
+
+  const isSameOrAfter = (date1: Date | string, date2: Date | string) => {
+    const d1 = normalizeDate(date1);
+    const d2 = normalizeDate(date2);
+    return d1 >= d2;
+  };
+
+  const isBefore = (date1: Date | string, date2: Date | string) => {
+    const d1 = normalizeDate(date1);
+    const d2 = normalizeDate(date2);
+    return d1 < d2;
+  };
+
   // Separate trips by status
   const today = new Date();
-  const upcomingTrips = filteredTrips.filter(trip => new Date(trip.startDate) > today);
-  const ongoingTrips = filteredTrips.filter(trip => 
-    new Date(trip.startDate) <= today && new Date(trip.endDate) >= today
-  );
-  const pastTrips = filteredTrips.filter(trip => new Date(trip.endDate) < today);
+  today.setHours(0, 0, 0, 0);
+  
+  const upcomingTrips = filteredTrips.filter(trip => {
+    try {
+      // A trip is upcoming if it starts in the future
+      return isBefore(today, trip.startDate);
+    } catch (e) {
+      console.error("Error parsing date:", trip.startDate);
+      return false;
+    }
+  });
+  
+  const ongoingTrips = filteredTrips.filter(trip => {
+    try {
+      // A trip is ongoing if today is between start and end dates (inclusive)
+      return isSameOrAfter(today, trip.startDate) && isSameOrBefore(today, trip.endDate);
+    } catch (e) {
+      console.error("Error parsing dates:", trip.startDate, trip.endDate);
+      return false;
+    }
+  });
+  
+  const pastTrips = filteredTrips.filter(trip => {
+    try {
+      // A trip is in the past if it has already ended
+      return isBefore(trip.endDate, today);
+    } catch (e) {
+      console.error("Error parsing date:", trip.endDate);
+      return false;
+    }
+  });
   
   // Sort trips
   const sortTrips = (tripsToSort: Trip[]) => {
@@ -94,8 +164,8 @@ export default function TripsPage() {
               </p>
             </div>
             
-            <div className="mt-4 md:mt-0">
-              <Button asChild>
+            <div className="mt-4 md:mt-0 space-x-2">
+              <Button asChild variant="outline">
                 <Link href="/trips/new">
                   <PlusIcon className="mr-2 h-4 w-4" />
                   New Trip
@@ -178,7 +248,7 @@ export default function TripsPage() {
                 {sortedOngoingTrips.length > 0 ? (
                   <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {sortedOngoingTrips.map((trip) => (
-                      <TripCard key={trip.id} trip={trip} />
+                      <TripCard key={trip.id} trip={trip} status="ongoing" />
                     ))}
                   </div>
                 ) : (
@@ -186,6 +256,11 @@ export default function TripsPage() {
                     <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
                     <h3 className="text-lg font-medium mb-2">No ongoing trips</h3>
                     <p className="text-muted-foreground mb-4">You don't have any trips happening right now.</p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <Button asChild variant="outline">
+                        <Link href="/trips/new">Create Trip Manually</Link>
+                      </Button>
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -194,7 +269,7 @@ export default function TripsPage() {
                 {sortedUpcomingTrips.length > 0 ? (
                   <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {sortedUpcomingTrips.map((trip) => (
-                      <TripCard key={trip.id} trip={trip} />
+                      <TripCard key={trip.id} trip={trip} status="upcoming" />
                     ))}
                   </div>
                 ) : (
@@ -202,9 +277,11 @@ export default function TripsPage() {
                     <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
                     <h3 className="text-lg font-medium mb-2">No upcoming trips</h3>
                     <p className="text-muted-foreground mb-4">Start planning your next adventure!</p>
-                    <Button asChild>
-                      <Link href="/trips/new">Plan a Trip</Link>
-                    </Button>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <Button asChild variant="outline">
+                        <Link href="/trips/new">Plan a Trip</Link>
+                      </Button>
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -213,7 +290,7 @@ export default function TripsPage() {
                 {sortedPastTrips.length > 0 ? (
                   <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {sortedPastTrips.map((trip) => (
-                      <TripCard key={trip.id} trip={trip} />
+                      <TripCard key={trip.id} trip={trip} status="past" />
                     ))}
                   </div>
                 ) : (
@@ -232,9 +309,11 @@ export default function TripsPage() {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 {searchTerm ? 'No trips match your search. Try a different term.' : 'You don\'t have any trips yet. Create your first one!'}
               </p>
-              <Button asChild>
-                <Link href="/trips/new">Create Your First Trip</Link>
-              </Button>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button asChild>
+                  <Link href="/trips/new">Create Your First Trip</Link>
+                </Button>
+              </div>
             </div>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { CalendarIcon, UsersIcon, WalletIcon, MapPinIcon, ArrowRightIcon } from 'lucide-react';
+import { CalendarIcon, UsersIcon, WalletIcon, MapPinIcon, ArrowRightIcon, CheckCircleIcon, CircleIcon, ClockIcon } from 'lucide-react';
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trip } from '@/types';
@@ -12,24 +12,35 @@ import { cn } from '@/lib/utils';
 
 interface TripCardProps {
   trip: Trip;
+  // Add status prop to ensure consistency with parent component categorization
+  status?: 'upcoming' | 'ongoing' | 'past';
 }
 
-export function TripCard({ trip }: TripCardProps) {
+export function TripCard({ trip, status: propStatus }: TripCardProps) {
   // Format dates for display
   const startDate = new Date(trip.startDate);
   const endDate = new Date(trip.endDate);
 
-  // Calculate trip status
+  // Calculate trip status if not provided via props
   const today = new Date();
-  let status: 'upcoming' | 'ongoing' | 'past';
+  today.setHours(0, 0, 0, 0);
   
-  if (today < startDate) {
-    status = 'upcoming';
-  } else if (today > endDate) {
-    status = 'past';
-  } else {
-    status = 'ongoing';
-  }
+  // Use status from props if available, otherwise calculate it
+  const status = propStatus || (() => {
+    const normalizedStartDate = new Date(startDate);
+    normalizedStartDate.setHours(0, 0, 0, 0);
+    
+    const normalizedEndDate = new Date(endDate);
+    normalizedEndDate.setHours(0, 0, 0, 0);
+    
+    if (today < normalizedStartDate) {
+      return 'upcoming';
+    } else if (today > normalizedEndDate) {
+      return 'past';
+    } else {
+      return 'ongoing';
+    }
+  })();
 
   // Format dates as strings
   const formattedStartDate = startDate.toLocaleDateString('en-US', {
@@ -43,95 +54,127 @@ export function TripCard({ trip }: TripCardProps) {
     day: 'numeric',
     year: 'numeric',
   });
-
-  // Get time until trip starts
-  const timeUntil = status === 'upcoming' 
-    ? formatDistanceToNow(startDate, { addSuffix: true })
-    : '';
     
-  // Calculate days left
-  const daysLeft = status === 'upcoming' 
-    ? Math.ceil((startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
+  // Calculate days left more precisely - normalize both dates
+  const calculateDaysLeft = () => {
+    const todayNormalized = new Date(today);
+    todayNormalized.setHours(0, 0, 0, 0);
+    
+    const startNormalized = new Date(startDate);
+    startNormalized.setHours(0, 0, 0, 0);
+    
+    // Calculate the difference in days
+    const timeDifference = startNormalized.getTime() - todayNormalized.getTime();
+    return Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+  };
+  
+  const daysLeft = status === 'upcoming' ? calculateDaysLeft() : 0;
+    
+  // Duration in days
+  const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
   return (
-    <Link href={`/trips/${trip.id}`} className="block h-full">
+    <Link href={`/trips/${trip.id}`} className="block h-full group">
       <Card className={cn(
-        "h-full overflow-hidden transition-all duration-200 hover:shadow-lg",
-        status === 'upcoming' && "border-blue-200 dark:border-blue-900",
-        status === 'ongoing' && "border-green-200 dark:border-green-900",
-        status === 'past' && "border-gray-200 dark:border-gray-800 opacity-80"
+        "h-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:transform hover:translate-y-[-2px]",
+        status === 'upcoming' && "border-blue-200 hover:border-blue-300",
+        status === 'ongoing' && "border-green-200 hover:border-green-300",
+        status === 'past' && "border-gray-200 hover:border-gray-300 opacity-90 hover:opacity-100"
       )}>
         <div className={cn(
-          "h-2",
-          status === 'upcoming' && "bg-blue-500",
-          status === 'ongoing' && "bg-green-500",
-          status === 'past' && "bg-gray-300 dark:bg-gray-700"
+          "h-2.5",
+          status === 'upcoming' && "bg-gradient-to-r from-blue-400 to-blue-600",
+          status === 'ongoing' && "bg-gradient-to-r from-green-400 to-green-600",
+          status === 'past' && "bg-gradient-to-r from-gray-300 to-gray-400"
         )} />
-        <CardHeader className="pb-2 px-4 pt-4 md:px-6">
-          <div className="flex justify-between items-start">
+        <CardHeader className="pb-2 px-5 pt-5">
+          <div className="flex justify-between items-start gap-2">
             <div className="flex items-center">
-              <MapPinIcon className={cn(
-                "mr-2 h-5 w-5",
-                status === 'upcoming' && "text-blue-500",
-                status === 'ongoing' && "text-green-500",
-                status === 'past' && "text-gray-400"
-              )} />
-              <CardTitle className="text-xl">{trip.name}</CardTitle>
+              <div className={cn(
+                "h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0 mr-3",
+                status === 'upcoming' && "bg-blue-100 text-blue-600",
+                status === 'ongoing' && "bg-green-100 text-green-600",
+                status === 'past' && "bg-gray-100 text-gray-500"
+              )}>
+                <MapPinIcon className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-xl font-bold line-clamp-1">{trip.name}</CardTitle>
             </div>
-            {status === 'upcoming' && (
-              <Badge className="bg-blue-500 hover:bg-blue-600">Upcoming</Badge>
-            )}
-            {status === 'ongoing' && (
-              <Badge className="bg-green-500 hover:bg-green-600">Ongoing</Badge>
-            )}
-            {status === 'past' && (
-              <Badge variant="outline">Past</Badge>
-            )}
+            <div>
+              {status === 'upcoming' && (
+                <Badge className="bg-blue-500 hover:bg-blue-600 transition-colors shadow-sm">Upcoming</Badge>
+              )}
+              {status === 'ongoing' && (
+                <Badge className="bg-green-500 hover:bg-green-600 transition-colors shadow-sm">Ongoing</Badge>
+              )}
+              {status === 'past' && (
+                <Badge variant="outline" className="transition-colors shadow-sm">Past</Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="px-4 md:px-6">
-          <div className="space-y-3">
+        <CardContent className="px-5 pt-3">
+          <div className="space-y-3.5">
             <div className="flex items-center text-sm">
-              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-              <span>
-                {formattedStartDate} - {formattedEndDate}
-              </span>
+              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{formattedStartDate} - {formattedEndDate}</span>
+                <span className="text-xs text-muted-foreground">{durationDays} {durationDays === 1 ? 'day' : 'days'}</span>
+              </div>
             </div>
             
             <div className="flex items-center text-sm">
-              <UsersIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-              <span>{trip.participants.length} participants</span>
+              <UsersIcon className="mr-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{trip.participants.length} {trip.participants.length === 1 ? 'participant' : 'participants'}</span>
+                {trip.participants.length > 0 && (
+                  <span className="text-xs text-muted-foreground line-clamp-1">
+                    Including you
+                  </span>
+                )}
+              </div>
             </div>
             
             {trip.budget && (
               <div className="flex items-center text-sm">
-                <WalletIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>Budget: ${trip.budget}</span>
+                <WalletIcon className="mr-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div>
+                  <span className="text-sm font-medium">Budget: ${trip.budget}</span>
+                </div>
               </div>
             )}
           </div>
         </CardContent>
         
-        <CardFooter className="flex justify-between items-center mt-2 px-4 pb-4 md:px-6">
+        <CardFooter className="flex justify-between items-center mt-auto pt-3 px-5 pb-5 border-t border-border/50 mt-4">
           {status === 'upcoming' ? (
-            <div className="text-sm font-medium">
+            <div className="flex items-center gap-1.5">
+              <ClockIcon className={cn(
+                "h-4 w-4",
+                daysLeft <= 3 ? "text-blue-500" : "text-muted-foreground"
+              )} />
               {daysLeft === 0 ? (
-                <span className="text-blue-600 dark:text-blue-400">Starts today!</span>
+                <span className="text-sm font-medium text-blue-600">Starts today!</span>
               ) : daysLeft === 1 ? (
-                <span className="text-blue-600 dark:text-blue-400">Starts tomorrow!</span>
+                <span className="text-sm font-medium text-blue-600">Starts tomorrow!</span>
               ) : (
-                <span className="text-muted-foreground">Starts in {daysLeft} days</span>
+                <span className="text-sm text-muted-foreground">In {daysLeft} days</span>
               )}
             </div>
           ) : status === 'ongoing' ? (
-            <span className="text-sm text-green-600 dark:text-green-400 font-medium">Happening now</span>
+            <div className="flex items-center gap-1.5">
+              <CircleIcon className="h-4 w-4 text-green-500 fill-green-500" />
+              <span className="text-sm font-medium text-green-600">Happening now</span>
+            </div>
           ) : (
-            <span className="text-sm text-muted-foreground">Completed</span>
+            <div className="flex items-center gap-1.5">
+              <CheckCircleIcon className="h-4 w-4 text-muted-foreground/70" />
+              <span className="text-sm text-muted-foreground">Completed</span>
+            </div>
           )}
           
-          <Button variant="ghost" size="sm" className="gap-1 text-xs" aria-label={`View ${trip.name} details`}>
-            Details <ArrowRightIcon className="h-3 w-3" />
+          <Button variant="ghost" size="sm" className="gap-1 text-xs font-medium group-hover:bg-muted/80 transition-colors" aria-label={`View ${trip.name} details`}>
+            Details <ArrowRightIcon className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
           </Button>
         </CardFooter>
       </Card>

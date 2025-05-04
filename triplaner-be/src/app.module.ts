@@ -10,6 +10,7 @@ import { ActivitiesModule } from './activities/activities.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmailModule } from './email/email.module';
+import { OpenAIModule } from './openai/openai.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EmailModule } from './email/email.module';
     InvitationsModule,
     DashboardModule,
     EmailModule,
+    OpenAIModule,
   ],
   controllers: [AppController],
   providers: [AppService],

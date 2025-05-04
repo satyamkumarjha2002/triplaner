@@ -9,5 +9,15 @@ type ThemeProviderProps = {
 };
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+  // Force light theme without allowing any changes
+  return (
+    <NextThemesProvider 
+      forcedTheme="light" 
+      attribute="class" 
+      enableSystem={false} 
+      {...props}
+    >
+      {children}
+    </NextThemesProvider>
+  );
 } 

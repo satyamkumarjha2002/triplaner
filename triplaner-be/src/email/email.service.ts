@@ -129,12 +129,14 @@ This is an automated message, please do not reply to this email.
   ): Promise<any> {
     try {
       if (!recipientEmails.length) {
-        this.logger.warn('No recipients provided for accepted invitation notification');
+        this.logger.warn(
+          'No recipients provided for accepted invitation notification',
+        );
         return;
       }
 
-      const recipients = recipientEmails.map(email => ({ Email: email }));
-      
+      const recipients = recipientEmails.map((email) => ({ Email: email }));
+
       const response = await this.mailjet
         .post('send', { version: mailjetConfig.version })
         .request({
@@ -183,10 +185,15 @@ This is an automated message, please do not reply to this email.
           ],
         });
 
-      this.logger.log(`Invitation accepted notification sent to ${recipientEmails.join(', ')} for trip ${tripName}`);
+      this.logger.log(
+        `Invitation accepted notification sent to ${recipientEmails.join(', ')} for trip ${tripName}`,
+      );
       return response.body;
     } catch (error) {
-      this.logger.error(`Failed to send invitation accepted notification:`, error);
+      this.logger.error(
+        `Failed to send invitation accepted notification:`,
+        error,
+      );
       throw error;
     }
   }
@@ -209,12 +216,14 @@ This is an automated message, please do not reply to this email.
   ): Promise<any> {
     try {
       if (!recipientEmails.length) {
-        this.logger.warn('No recipients provided for declined invitation notification');
+        this.logger.warn(
+          'No recipients provided for declined invitation notification',
+        );
         return;
       }
 
-      const recipients = recipientEmails.map(email => ({ Email: email }));
-      
+      const recipients = recipientEmails.map((email) => ({ Email: email }));
+
       const response = await this.mailjet
         .post('send', { version: mailjetConfig.version })
         .request({
@@ -262,10 +271,15 @@ This is an automated message, please do not reply to this email.
           ],
         });
 
-      this.logger.log(`Invitation declined notification sent to ${recipientEmails.join(', ')} for trip ${tripName}`);
+      this.logger.log(
+        `Invitation declined notification sent to ${recipientEmails.join(', ')} for trip ${tripName}`,
+      );
       return response.body;
     } catch (error) {
-      this.logger.error(`Failed to send invitation declined notification:`, error);
+      this.logger.error(
+        `Failed to send invitation declined notification:`,
+        error,
+      );
       throw error;
     }
   }

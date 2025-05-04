@@ -4,9 +4,7 @@ import {
   IsDateString,
   IsOptional,
   IsNumber,
-  IsEnum,
 } from 'class-validator';
-import { ActivityCategory } from '../entities/activity.entity';
 
 export class CreateActivityDto {
   @IsNotEmpty()
@@ -22,7 +20,7 @@ export class CreateActivityDto {
   time?: string;
 
   @IsNotEmpty()
-  @IsEnum(ActivityCategory)
+  @IsString()
   category: string;
 
   @IsOptional()

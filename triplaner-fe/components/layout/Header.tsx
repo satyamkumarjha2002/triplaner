@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SunIcon, MoonIcon, MapPinIcon, MenuIcon, BellIcon } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { MapPinIcon, MenuIcon, BellIcon, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,10 +22,10 @@ import { useModal } from '@/context/ModalContext';
 import { useAuth } from '@/context/AuthContext';
 import { getCookie } from '@/lib/cookies';
 import { Badge } from '@/components/ui/badge';
+import { AIPlannerButton } from '@/components/trips/AIPlannerButton';
 
 export function Header() {
   const { isAuthenticated, user, loading, refreshAuthState, hasPendingInvitations } = useAuth();
-  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { openModal, closeModal } = useModal();
   
@@ -101,18 +100,13 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? (
-              <SunIcon className="h-5 w-5" />
-            ) : (
-              <MoonIcon className="h-5 w-5" />
-            )}
-          </Button>
+          {authenticated && (
+            <AIPlannerButton 
+              className="relative bg-gradient-to-r from-blue-600 to-teal-500 text-white hover:from-blue-700 hover:to-teal-600 hover:shadow-md hover:shadow-primary/20 hover:scale-105 transition-all duration-200 font-medium"
+              variant="default"
+              size="sm"
+            />
+          )}
 
           {authenticated ? (
             <>
@@ -154,6 +148,12 @@ export function Header() {
                     >
                       Join Trip
                     </button>
+                    <div className="text-sm font-medium py-2">
+                      <AIPlannerButton 
+                        className="w-full bg-gradient-to-r from-blue-600 to-teal-500 text-white hover:from-blue-700 hover:to-teal-600 hover:shadow-md transition-all justify-start"
+                        variant="default"
+                      />
+                    </div>
                     <Link href="/profile" className="text-sm font-medium py-2">
                       Profile
                     </Link>

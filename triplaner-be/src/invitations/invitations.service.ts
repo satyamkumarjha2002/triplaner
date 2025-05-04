@@ -147,20 +147,22 @@ export class InvitationsService {
     // Send invitation email
     try {
       const inviterName = user.name || user.username;
-      
+
       // Convert dates to strings properly, handling both Date objects and string dates
-      const startDateString = typeof trip.startDate === 'string' 
-        ? trip.startDate 
-        : trip.startDate instanceof Date 
-          ? trip.startDate.toISOString() 
-          : new Date(trip.startDate).toISOString();
-          
-      const endDateString = typeof trip.endDate === 'string' 
-        ? trip.endDate 
-        : trip.endDate instanceof Date 
-          ? trip.endDate.toISOString() 
-          : new Date(trip.endDate).toISOString();
-      
+      const startDateString =
+        typeof trip.startDate === 'string'
+          ? trip.startDate
+          : trip.startDate instanceof Date
+            ? trip.startDate.toISOString()
+            : new Date(trip.startDate).toISOString();
+
+      const endDateString =
+        typeof trip.endDate === 'string'
+          ? trip.endDate
+          : trip.endDate instanceof Date
+            ? trip.endDate.toISOString()
+            : new Date(trip.endDate).toISOString();
+
       await this.emailService.sendTripInvitation(
         createInvitationDto.email,
         inviterName,
@@ -205,13 +207,13 @@ export class InvitationsService {
 
     // Get the trip details
     const trip = await this.tripsService.findOne(invitation.tripId);
-    
+
     // Notify all trip participants
     try {
       // Collect participant emails, excluding the user who accepted
       const participantEmails = trip.participants
-        .filter(p => p.email !== userEmail)
-        .map(p => p.email);
+        .filter((p) => p.email !== userEmail)
+        .map((p) => p.email);
 
       if (participantEmails.length > 0) {
         const userName = user.name || user.username;
@@ -221,10 +223,14 @@ export class InvitationsService {
           trip.name,
           trip.id,
         );
-        this.logger.log(`Acceptance notification emails sent to trip participants`);
+        this.logger.log(
+          `Acceptance notification emails sent to trip participants`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to send acceptance notification emails: ${error.message}`);
+      this.logger.error(
+        `Failed to send acceptance notification emails: ${error.message}`,
+      );
     }
   }
 
@@ -255,18 +261,20 @@ export class InvitationsService {
     // Get user info for the email notification
     const user = await this.usersService.findByEmail(userEmail);
     if (!user) {
-      this.logger.warn(`User with email ${userEmail} not found for decline notification`);
+      this.logger.warn(
+        `User with email ${userEmail} not found for decline notification`,
+      );
       return;
     }
 
     // Get the trip details
     const trip = await this.tripsService.findOne(invitation.tripId);
-    
+
     // Notify trip creator and other participants
     try {
       // Collect participant emails, excluding the user who declined
-      const participantEmails = trip.participants.map(p => p.email);
-      
+      const participantEmails = trip.participants.map((p) => p.email);
+
       if (participantEmails.length > 0) {
         const userName = user.name || user.username;
         await this.emailService.sendInvitationDeclinedNotification(
@@ -276,10 +284,14 @@ export class InvitationsService {
           trip.id,
           reason,
         );
-        this.logger.log(`Decline notification emails sent to trip participants`);
+        this.logger.log(
+          `Decline notification emails sent to trip participants`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to send decline notification emails: ${error.message}`);
+      this.logger.error(
+        `Failed to send decline notification emails: ${error.message}`,
+      );
     }
   }
 }
