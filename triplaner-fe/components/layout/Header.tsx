@@ -20,11 +20,10 @@ import {
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useModal } from '@/context/ModalContext';
+import { useAuth } from '@/context/AuthContext';
 
 export function Header() {
-  // This would be replaced with real auth state in a full implementation
-  const isAuthenticated = true;
-  const user = { username: 'testuser' };
+  const { isAuthenticated, user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { openModal, closeModal } = useModal();
@@ -34,7 +33,7 @@ export function Header() {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return <header className="border-b h-16" />;
   }
 
@@ -77,7 +76,7 @@ export function Header() {
             )}
           </Button>
 
-          {isAuthenticated ? (
+          {isAuthenticated && user ? (
             <>
               {/* Mobile menu */}
               <Sheet>

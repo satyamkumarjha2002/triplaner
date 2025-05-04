@@ -1,5 +1,6 @@
 import { api } from './api';
 import { User } from '../types';
+import { setCookie, getCookie, removeCookie } from '@/lib/cookies';
 
 export interface LoginCredentials {
   email: string;
@@ -17,9 +18,9 @@ export const authService = {
   async login(email: string, password: string): Promise<User> {
     const response = await api.post<{ user: User, token: string }>('/auth/login', { email, password });
     
-    // Store token in localStorage
-    if (response.token && typeof window !== 'undefined') {
-      localStorage.setItem('authToken', response.token);
+    // Store token in cookie
+    if (response.token) {
+      setCookie('authToken', response.token);
     }
     
     return response.user;
@@ -29,9 +30,9 @@ export const authService = {
   async register(data: RegisterData): Promise<User> {
     const response = await api.post<{ user: User, token: string }>('/auth/register', data);
     
-    // Store token in localStorage
-    if (response.token && typeof window !== 'undefined') {
-      localStorage.setItem('authToken', response.token);
+    // Store token in cookie
+    if (response.token) {
+      setCookie('authToken', response.token);
     }
     
     return response.user;
@@ -42,10 +43,8 @@ export const authService = {
     // Call the backend endpoint
     await api.post('/auth/logout');
     
-    // Remove token from localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-    }
+    // Remove token from cookie
+    removeCookie('authToken');
   },
 
   // Get current user

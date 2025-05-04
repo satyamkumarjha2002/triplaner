@@ -18,7 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { authService } from '@/services/auth';
+import { useAuth } from '@/context/AuthContext';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -31,6 +31,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -45,7 +46,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await authService.login(data.email, data.password);
+      await login(data.email, data.password);
       router.push('/dashboard');
     } catch (err) {
       console.error('Login failed', err);
