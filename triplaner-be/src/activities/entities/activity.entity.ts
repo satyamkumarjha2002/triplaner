@@ -11,6 +11,7 @@ import { User } from '../../users/entities/user.entity';
 import { Trip } from '../../trips/entities/trip.entity';
 import { Vote } from './vote.entity';
 
+// Keep the enum for reference, but we won't use it for the column type
 export enum ActivityCategory {
   ADVENTURE = 'Adventure',
   FOOD = 'Food',
@@ -33,9 +34,8 @@ export class Activity {
   time: string;
 
   @Column({
-    type: 'enum',
-    enum: ActivityCategory,
-    default: ActivityCategory.OTHER,
+    type: 'varchar',
+    default: 'Other',
   })
   category: string;
 

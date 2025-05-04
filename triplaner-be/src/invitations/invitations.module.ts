@@ -9,10 +9,10 @@ import { InvitationsController } from './invitations.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Invitation]), 
-    TripsModule, 
+    TypeOrmModule.forFeature([Invitation]),
+    TripsModule,
     UsersModule,
-    EmailModule
+    EmailModule,
   ],
   providers: [InvitationsService],
   controllers: [InvitationsController],
