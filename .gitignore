@@ -1,0 +1,89 @@
+# Dependencies
+**/node_modules/
+**/.pnp/
+**/.pnp.js
+**/.yarn/
+
+# Build outputs
+**/dist/
+**/build/
+**/.next/
+**/out/
+**/.nuxt/
+**/.output/
+
+# Coverage and test
+**/coverage/
+**/.nyc_output/
+**/.jest/
+
+# Environment variables
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+**/.env*.local
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/lerna-debug.log*
+
+# Editor directories and files
+**/.idea/
+**/.vscode/*
+!**/.vscode/extensions.json
+**/.DS_Store
+**/*.suo
+**/*.ntvs*
+**/*.njsproj
+**/*.sln
+**/*.sw?
+
+# TypeScript cache
+**/*.tsbuildinfo
+**/.tscache/
+**/.turbo
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+**/.Python
+**/venv/
+**/env/
+**/ENV/
+**/pythonenv*
+**/.env/
+**/.venv/
+**/pip-log.txt
+**/pip-delete-this-directory.txt
+
+# Database
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+
+# Development artifacts
+**/.vercel
+**/.netlify
+**/.cache/
+**/temp/
+**/public/hot
+
+# Debug
+**/.debug/
+
+# Misc
+**/.DS_Store
+**/Thumbs.db
+
+# Project specific
+triplaner-fe/.gitignore
+triplaner-be/.gitignore 
