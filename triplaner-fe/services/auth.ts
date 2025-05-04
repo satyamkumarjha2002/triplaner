@@ -1,6 +1,7 @@
 import { api } from './api';
 import { User } from '../types';
 import { setCookie, getCookie, removeCookie } from '@/lib/cookies';
+import { AxiosError } from 'axios';
 
 export interface LoginCredentials {
   email: string;
@@ -12,6 +13,11 @@ export interface RegisterData {
   email: string;
   password: string;
 }
+
+// Use a flag to avoid repeated failed auth attempts
+let authCheckInProgress = false;
+let lastAuthAttempt = 0;
+const AUTH_COOLDOWN = 5000; // 5 seconds cooldown between auth checks
 
 export const authService = {
   // Login user
@@ -49,9 +55,37 @@ export const authService = {
 
   // Get current user
   async getCurrentUser(): Promise<User | null> {
+    // Check if there's a token before making the request
+    const token = getCookie('authToken');
+    if (!token) {
+      return null;
+    }
+    
+    // Implement cooldown to prevent repeated failed auth attempts
+    const now = Date.now();
+    if (authCheckInProgress || (now - lastAuthAttempt < AUTH_COOLDOWN)) {
+      console.log('Auth check skipped - too frequent or already in progress');
+      return null;
+    }
+    
     try {
-      return await api.get<User>('/auth/me');
+      authCheckInProgress = true;
+      lastAuthAttempt = now;
+      
+      const user = await api.get<User>('/auth/me');
+      
+      authCheckInProgress = false;
+      return user;
     } catch (error) {
+      console.error('Error fetching current user:', error);
+      authCheckInProgress = false;
+      
+      // If unauthorized, clear token to prevent further requests
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 401) {
+        removeCookie('authToken');
+      }
+      
       return null;
     }
   },
