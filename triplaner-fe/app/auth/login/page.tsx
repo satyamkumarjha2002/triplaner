@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { AuthLayout } from '@/components/auth/AuthLayout';
 import { getCookie } from '@/lib/cookies';
 import { useAuth } from '@/context/AuthContext';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 
 export default function LoginPage() {
   const router = useRouter();

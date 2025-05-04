@@ -75,7 +75,7 @@ export const tripService = {
   },
 
   // Decline an invitation
-  async declineInvitation(invitationId: string): Promise<void> {
-    return api.put(`/invitations/${invitationId}/decline`);
+  async declineInvitation(invitationId: string, reason?: string): Promise<void> {
+    return api.put(`/invitations/${invitationId}/decline`, { reason });
   }
 }; 
