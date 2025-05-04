@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -31,6 +31,7 @@ import { activityService } from '@/services/activities';
 import { Trip, Activity } from '@/types';
 import { useModal } from '@/context/ModalContext';
 import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 interface TripDetailPageProps {
   params: {
@@ -42,12 +43,16 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
   const router = useRouter();
   const { tripId } = params;
   const { openModal } = useModal();
+  const { user } = useAuth();
   
   const [isLoading, setIsLoading] = useState(true);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  
+  // Ref for polling interval
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchTripData = async () => {
     try {
@@ -68,6 +73,28 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
 
   useEffect(() => {
     fetchTripData();
+    
+    // Set up polling for real-time updates
+    pollingIntervalRef.current = setInterval(() => {
+      // Only fetch activities to update votes
+      activityService.getTripActivities(tripId)
+        .then(updatedActivities => {
+          console.log('Polling: Updated activities with votes');
+          
+          // Force re-render by creating a new array
+          setActivities([...updatedActivities]);
+        })
+        .catch(err => {
+          console.error('Failed to poll activity updates', err);
+        });
+    }, 5000); // Poll every 5 seconds
+    
+    // Cleanup polling on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [tripId]);
 
   if (isLoading) {
@@ -158,12 +185,14 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
     try {
       const updatedActivity = await activityService.voteActivity(tripId, activityId, isUpvote);
       
-      // Update the activity in the state
-      setActivities(currentActivities => 
-        currentActivities.map(activity => 
+      // Update the activity in the state and force a re-render
+      setActivities(currentActivities => {
+        const newActivities = currentActivities.map(activity => 
           activity.id === updatedActivity.id ? updatedActivity : activity
-        )
-      );
+        );
+        // Return a new array to trigger re-render
+        return [...newActivities];
+      });
       
       toast({
         title: isUpvote ? "Voted up!" : "Voted down!",
@@ -184,12 +213,14 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
     try {
       const updatedActivity = await activityService.removeVote(tripId, activityId);
       
-      // Update the activity in the state
-      setActivities(currentActivities => 
-        currentActivities.map(activity => 
+      // Update the activity in the state and force a re-render
+      setActivities(currentActivities => {
+        const newActivities = currentActivities.map(activity => 
           activity.id === updatedActivity.id ? updatedActivity : activity
-        )
-      );
+        );
+        // Return a new array to trigger re-render
+        return [...newActivities];
+      });
       
       toast({
         title: "Vote removed",
@@ -207,9 +238,9 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
 
   // Helper function to check if current user has voted on an activity
   const getUserVote = (votes: any[]) => {
-    // For demo purposes, using a fixed user ID
-    const currentUserId = '1'; // In a real app, this would come from authentication
-    const userVote = votes.find(vote => vote.userId === currentUserId);
+    if (!user) return null; 
+    
+    const userVote = votes.find(vote => vote.userId === user.id);
     return userVote ? (userVote.isUpvote ? 'up' : 'down') : null;
   };
 
@@ -218,6 +249,25 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
     const upvotes = votes.filter(vote => vote.isUpvote).length;
     const downvotes = votes.filter(vote => !vote.isUpvote).length;
     return { upvotes, downvotes, total: upvotes - downvotes };
+  };
+
+  // Sort activities based on votes
+  const sortActivitiesByVotes = (activities: Activity[]) => {
+    return [...activities].sort((a, b) => {
+      // Sort specifically by upvotes count instead of total
+      const upvotesA = a.votes.filter(vote => vote.isUpvote).length;
+      const upvotesB = b.votes.filter(vote => vote.isUpvote).length;
+      
+      // First sort by upvotes
+      if (upvotesA !== upvotesB) {
+        return upvotesB - upvotesA; // Descending order (highest upvotes first)
+      }
+      
+      // If upvotes are the same, then sort by total score
+      const totalA = countVotes(a.votes).total;
+      const totalB = countVotes(b.votes).total;
+      return totalB - totalA;
+    });
   };
 
   return (
@@ -283,8 +333,7 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
                           {format(new Date(date), 'EEEE, MMMM d, yyyy')}
                         </h3>
                         <div className="space-y-4">
-                          {activitiesByDate[date]
-                            .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+                          {sortActivitiesByVotes(activitiesByDate[date])
                             .map(activity => {
                               const userVote = getUserVote(activity.votes);
                               const { upvotes, downvotes, total } = countVotes(activity.votes);
@@ -300,7 +349,13 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
                                     }`} />
                                     <div className="p-4 w-full">
                                       <div className="flex justify-between">
-                                        <h4 className="font-medium">{activity.title}</h4>
+                                        <h4 className="font-medium">
+                                          {activity.title}
+                                          {/* Display the upvote count for debugging */}
+                                          <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-1 rounded">
+                                            {activity.votes.filter(vote => vote.isUpvote).length} upvotes
+                                          </span>
+                                        </h4>
                                         <Badge variant="outline">{activity.category}</Badge>
                                       </div>
                                       <div className="flex items-center text-sm text-muted-foreground mt-1">
@@ -326,11 +381,16 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
                                         <Button 
                                           variant={userVote === 'up' ? 'default' : 'outline'} 
                                           size="sm"
-                                          className={`h-8 ${userVote === 'up' ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                                          className={`h-8 ${
+                                            userVote === 'up' 
+                                              ? 'bg-green-500 hover:bg-green-600 text-white' 
+                                              : user ? 'hover:bg-green-100' : 'opacity-75'
+                                          }`}
                                           onClick={() => userVote === 'up' 
                                             ? handleRemoveVote(activity.id) 
                                             : handleVote(activity.id, true)
                                           }
+                                          disabled={!user}
                                         >
                                           <ThumbsUp className="h-4 w-4 mr-1" />
                                           <span>{upvotes}</span>
@@ -338,11 +398,16 @@ export default function TripDetailPage({ params }: TripDetailPageProps) {
                                         <Button 
                                           variant={userVote === 'down' ? 'default' : 'outline'} 
                                           size="sm"
-                                          className={`h-8 ${userVote === 'down' ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                                          className={`h-8 ${
+                                            userVote === 'down' 
+                                              ? 'bg-red-500 hover:bg-red-600 text-white' 
+                                              : user ? 'hover:bg-red-100' : 'opacity-75'
+                                          }`}
                                           onClick={() => userVote === 'down' 
                                             ? handleRemoveVote(activity.id) 
                                             : handleVote(activity.id, false)
                                           }
+                                          disabled={!user}
                                         >
                                           <ThumbsDown className="h-4 w-4 mr-1" />
                                           <span>{downvotes}</span>

@@ -50,4 +50,5 @@ export type AuthState = {
   isAuthenticated: boolean;
   user: User | null;
   loading: boolean;
+  hasPendingInvitations: boolean;
 }; 

@@ -1,26 +1,36 @@
 'use client';
 
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { getCookie } from '@/lib/cookies';
+import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
+  const [redirectChecked, setRedirectChecked] = useState(false);
+
+  // Check if user is already authenticated and redirect
+  useEffect(() => {
+    // Only check once loading is complete and we haven't checked before
+    if (!loading && !redirectChecked) {
+      setRedirectChecked(true);
+      
+      const hasToken = !!getCookie('authToken');
+      
+      // If authenticated or has token, redirect to trips page
+      if (isAuthenticated || hasToken) {
+        console.log('Already authenticated, redirecting to trips page');
+        router.replace('/trips');
+      }
+    }
+  }, [isAuthenticated, loading, redirectChecked, router]);
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      
-      <main className="flex-1 container py-12">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Create Account</h1>
-          <p className="text-muted-foreground">
-            Join Planit to start planning your trips with friends
-          </p>
-        </div>
-        
-        <RegisterForm />
-      </main>
-      
-      <Footer />
-    </div>
+    <AuthLayout>
+      <RegisterForm />
+    </AuthLayout>
   );
 } 

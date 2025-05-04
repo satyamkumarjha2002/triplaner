@@ -14,9 +14,11 @@ class HealthCheckService {
   private onStatusChangeCallbacks: ((status: ConnectionStatus) => void)[] = [];
   private connectionStatus: ConnectionStatus = 'unknown';
   private failedChecks = 0;
-  private maxFailedChecks = 2; // Number of failed checks before considering disconnected
+  private maxFailedChecks = 10; // Number of failed checks before considering disconnected
   private authFailureDetected = false; // Flag to track auth failures
   private backoffTime = 10000; // Base interval time in ms
+  private lastSuccessfulCheck = 0; // Timestamp of last successful check
+  private MIN_SUCCESS_INTERVAL = 30000; // Minimum time between triggering success callbacks (30 seconds)
   
   /**
    * Start health check polling to the server
@@ -164,14 +166,19 @@ class HealthCheckService {
         this.resetBackoff();
       }
       
-      // Run success callbacks
-      this.onSuccessCallbacks.forEach(callback => {
-        try {
-          callback();
-        } catch (error) {
-          console.error('Error in health check success callback:', error);
-        }
-      });
+      const now = Date.now();
+      // Only trigger success callbacks if enough time has passed since the last success
+      if (now - this.lastSuccessfulCheck >= this.MIN_SUCCESS_INTERVAL) {
+        // Run success callbacks
+        this.onSuccessCallbacks.forEach(callback => {
+          try {
+            callback();
+          } catch (error) {
+            console.error('Error in health check success callback:', error);
+          }
+        });
+        this.lastSuccessfulCheck = now;
+      }
       
       return response;
     } catch (error: any) {

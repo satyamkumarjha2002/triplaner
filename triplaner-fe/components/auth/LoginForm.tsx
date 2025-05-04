@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { ArrowRightIcon, Loader2Icon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +46,12 @@ export function LoginForm() {
 
     try {
       await login(values.email, values.password);
-      router.push('/trips');
+      console.log('Login successful in form, redirecting...');
+      // Force a small delay to ensure state updates
+      setTimeout(() => {
+        router.push('/dashboard');
+        router.refresh(); // Force refresh to update UI
+      }, 100);
     } catch (err) {
       console.error('Login error:', err);
       setError('Invalid email or password. Please try again.');
@@ -55,7 +61,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="mx-auto max-w-md">
+    <Card className="mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl">Login</CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>
@@ -70,7 +76,13 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
+                    <Input 
+                      placeholder="you@example.com" 
+                      type="email"
+                      autoComplete="email"
+                      disabled={isLoading}
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -81,9 +93,22 @@ export function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Password</FormLabel>
+                    <Link 
+                      href="/auth/forgot-password" 
+                      className="text-xs text-muted-foreground hover:text-primary"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input 
+                      type="password" 
+                      autoComplete="current-password"
+                      disabled={isLoading}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -91,7 +116,17 @@ export function LoginForm() {
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : 'Log in'}
+              {isLoading ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRightIcon className="ml-2 h-4 w-4" />
+                </>
+              )}
             </Button>
           </form>
         </Form>

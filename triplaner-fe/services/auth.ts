@@ -12,6 +12,13 @@ export interface RegisterData {
   username: string;
   email: string;
   password: string;
+  name?: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token?: string;
+  hasPendingInvitations?: boolean;
 }
 
 // Use a flag to avoid repeated failed auth attempts
@@ -21,27 +28,27 @@ const AUTH_COOLDOWN = 5000; // 5 seconds cooldown between auth checks
 
 export const authService = {
   // Login user
-  async login(email: string, password: string): Promise<User> {
-    const response = await api.post<{ user: User, token: string }>('/auth/login', { email, password });
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/login', { email, password });
     
     // Store token in cookie
     if (response.token) {
       setCookie('authToken', response.token);
     }
     
-    return response.user;
+    return response;
   },
 
   // Register new user
-  async register(data: RegisterData): Promise<User> {
-    const response = await api.post<{ user: User, token: string }>('/auth/register', data);
+  async register(data: RegisterData): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/register', data);
     
     // Store token in cookie
     if (response.token) {
       setCookie('authToken', response.token);
     }
     
-    return response.user;
+    return response;
   },
 
   // Logout user
@@ -54,7 +61,7 @@ export const authService = {
   },
 
   // Get current user
-  async getCurrentUser(): Promise<User | null> {
+  async getCurrentUser(): Promise<AuthResponse | null> {
     // Check if there's a token before making the request
     const token = getCookie('authToken');
     if (!token) {
@@ -72,10 +79,10 @@ export const authService = {
       authCheckInProgress = true;
       lastAuthAttempt = now;
       
-      const user = await api.get<User>('/auth/me');
+      const response = await api.get<AuthResponse>('/auth/me');
       
       authCheckInProgress = false;
-      return user;
+      return response;
     } catch (error) {
       console.error('Error fetching current user:', error);
       authCheckInProgress = false;
@@ -93,8 +100,8 @@ export const authService = {
   // Check if user is authenticated
   async isAuthenticated(): Promise<boolean> {
     try {
-      const user = await this.getCurrentUser();
-      return !!user;
+      const response = await this.getCurrentUser();
+      return !!response?.user;
     } catch (error) {
       return false;
     }
