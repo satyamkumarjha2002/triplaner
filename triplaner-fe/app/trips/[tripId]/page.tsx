@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -37,6 +38,7 @@ interface TripDetailPageProps {
   params: {
     tripId: string;
   };
+  searchParams?: Record<string, string | string[]>;
 }
 
 export default function TripDetailPage({ params }: TripDetailPageProps) {

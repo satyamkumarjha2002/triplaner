@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   /* config options here */
   env: {
     NEXT_PUBLIC_API_URL: "https://tripplaner.onrender.com/api"
@@ -11,6 +10,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true
   },
-};
+}
 
-export default nextConfig;
+module.exports = nextConfig 

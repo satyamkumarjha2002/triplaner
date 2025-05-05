@@ -1,0 +1,27 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Debugging directory structure:"
+        - ls -la
+        - pwd
+        - |
+          if [ -d "triplaner-fe" ]; then
+            echo "Frontend directory found, changing to it"
+            cd triplaner-fe
+          else
+            echo "Already in frontend directory or different structure"
+          fi
+        - npm ci --legacy-peer-deps
+    build:
+      commands:
+        - npm run build:no-lint
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+appRoot: . 

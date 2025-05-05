@@ -3,8 +3,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getCookie, removeCookie } from '@/lib/cookies';
 
-// Configure base API URL
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9090';
+// Configure base API URL will change it
+const baseUrl = "https://tripplaner.onrender.com/api";
 // Ensure we don't append /api if it's already included in the base URL
 const API_BASE_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
